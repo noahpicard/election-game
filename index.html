@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE LONG CAMPAIGN — a run-for-office simulator</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗳️</text></svg>">
+</head>
+<body>
+
+<!-- ================= TITLE ================= -->
+<section id="s-title" class="screen active">
+  <div class="title-wrap">
+    <div class="kicker">a presidential campaign simulator</div>
+    <h1 class="masthead">THE LONG<br>CAMPAIGN</h1>
+    <p class="dek">Write yourself into the race. Take positions on the five issues that happen to define this cycle.
+       Buy the airwaves, work the doors, court the money, and find out what fifty-one separate electorates
+       actually think of you.</p>
+    <div class="title-actions">
+      <button class="btn big" id="btn-start">Begin a campaign</button>
+      <button class="btn ghost" id="btn-how">How it works</button>
+    </div>
+    <div class="title-note">Everything runs locally in this browser. No accounts, no server, no real people.</div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section id="s-how" class="screen">
+  <div class="doc">
+    <h2>How it works</h2>
+    <div class="doc-grid">
+      <div>
+        <h3>The electorate</h3>
+        <p>Every state gets <b>100 simulated voters</b>. Each one is given an age band and a gender drawn from that
+           state's real-ish demographic mix. Those three things — <b>state, age, gender</b> — are your three voter
+           dimensions.</p>
+        <p>Each state, each age band and each gender has its own opinion on each of the five issues, scored
+           <b>−3 to +3</b>. A voter's own position is the <b>average of their three</b>, plus a little personal noise.</p>
+        <p>Older voters turn out more reliably than younger ones, so a vote won among the over-65s is worth
+           more actual ballots than one won among the under-35s.</p>
+      </div>
+      <div>
+        <h3>How a vote is decided</h3>
+        <p>A voter's vector is their five issue scores followed by their <b>bias</b> toward each candidate
+           (everyone starts at zero; advertising moves it).</p>
+        <p>A candidate's vector is their five stances followed by <b>+3 in their own slot and −3 in every rival's</b>.</p>
+        <p>The voter picks whichever candidate gives the <b>highest cosine similarity</b>. That is the whole model —
+           issue alignment plus accumulated goodwill.</p>
+        <p><b>Cosine compares direction, not distance.</b> A candidate who holds no position on anything points
+           nowhere and is nobody's best match. Conviction in the wrong direction loses too — but a blank platform
+           loses to everything.</p>
+      </div>
+      <div>
+        <h3>The campaign</h3>
+        <p>You get money each round. Television reaches old voters, the internet reaches young ones, print reaches
+           almost nobody but never blows up in your face. Visits and field work hit one state hard.</p>
+        <p>Everything has <b>diminishing returns</b> — the fourth identical buy does roughly a third of what the first
+           one did — and everything can <b>backfire</b>. You are never told the exact number you moved; you are told
+           what happened, the way a campaign manager would tell you.</p>
+        <p>Between rounds you get a poll: your true standing, blurred by gaussian noise. On election night the real
+           numbers arrive, jittered one last time.</p>
+      </div>
+    </div>
+    <button class="btn" id="btn-how-back">Back</button>
+  </div>
+</section>
+
+<!-- ================= SETUP ================= -->
+<section id="s-setup" class="screen">
+  <div class="doc">
+    <div class="kicker">step one</div>
+    <h2>Set the field</h2>
+
+    <div class="setup-row">
+      <label class="lbl">Candidates</label>
+      <div class="seg" id="seg-count"></div>
+    </div>
+
+    <div class="setup-row">
+      <label class="lbl">Rounds of campaigning</label>
+      <div class="seg" id="seg-rounds"></div>
+    </div>
+
+    <div class="setup-row">
+      <label class="lbl">Money</label>
+      <div class="opt-cards" id="opt-funding"></div>
+    </div>
+
+    <div class="setup-row">
+      <label class="lbl">The field</label>
+      <div class="slots" id="slots"></div>
+      <div class="hint">Set a slot to <b>Human</b> to control it yourself. Two or more humans alternate control each
+        round, with a hand-off screen in between. Fields of five or six rarely produce a 270-vote majority — expect
+        the House of Representatives to end up choosing.</div>
+    </div>
+
+    <div class="setup-foot">
+      <button class="btn ghost" id="btn-setup-back">Back</button>
+      <button class="btn big" id="btn-setup-go">Continue</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BIO ================= -->
+<section id="s-bio" class="screen">
+  <div class="doc narrow">
+    <div class="kicker" id="bio-kicker">step two</div>
+    <h2>Who are you?</h2>
+    <div class="field">
+      <label class="lbl" for="in-name">Name on the ballot</label>
+      <input id="in-name" class="inp" maxlength="34" placeholder="e.g. Jo Rivera">
+    </div>
+    <div class="field">
+      <label class="lbl" for="in-party">Ticket / slogan <span class="opt">optional</span></label>
+      <input id="in-party" class="inp" maxlength="34" placeholder="e.g. The Front Porch Party">
+    </div>
+    <div class="field">
+      <label class="lbl" for="in-bio">Biography</label>
+      <textarea id="in-bio" class="inp ta" rows="7" maxlength="1200"
+        placeholder="Tell the country who you are. Where you're from, what you did before this, what happened to you that made you run. The pundit engine reads this closely — jobs, hardship, faith, service, the words you choose and how you choose them all shape who starts out willing to listen."></textarea>
+      <div class="counter"><span id="bio-count">0</span> words</div>
+    </div>
+    <div class="field">
+      <label class="lbl">Campaign colour</label>
+      <div class="swatches" id="swatches"></div>
+    </div>
+    <div class="setup-foot">
+      <button class="btn ghost" id="btn-bio-random">Surprise me</button>
+      <button class="btn big" id="btn-bio-go">Run the analysis</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ANALYSIS ================= -->
+<section id="s-analysis" class="screen">
+  <div class="doc narrow">
+    <div class="kicker">the pundit engine</div>
+    <h2 id="an-name">—</h2>
+    <div id="an-body"></div>
+    <div class="setup-foot">
+      <button class="btn ghost" id="btn-an-redo">Rewrite the bio</button>
+      <button class="btn big" id="btn-an-go">Accept this read</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TOPICS / STANCES ================= -->
+<section id="s-stance" class="screen">
+  <div class="doc">
+    <div class="kicker" id="stance-kicker">step three</div>
+    <h2>The issues of the cycle</h2>
+    <p class="dek small">Five issues came out of the pile this year. Where you land on them is the biggest single
+      decision you will make — advertising moves margins, but positions decide who is even willing to hear you.
+      The projection updates as you move.</p>
+    <div id="stance-list"></div>
+    <div class="setup-foot">
+      <button class="btn ghost" id="btn-stance-auto">Let the consultants pick</button>
+      <button class="btn big" id="btn-stance-go">Lock in the platform</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HAND-OFF ================= -->
+<section id="s-hand" class="screen">
+  <div class="doc narrow center">
+    <div class="kicker">hand the device over</div>
+    <h2 id="hand-name">—</h2>
+    <p class="dek" id="hand-sub">Nobody else should be looking at this screen.</p>
+    <button class="btn big" id="btn-hand-go">I'm ready</button>
+  </div>
+</section>
+
+<!-- ================= CAMPAIGN ================= -->
+<section id="s-campaign" class="screen full">
+  <header class="topbar">
+    <div class="brand">THE LONG CAMPAIGN</div>
+    <div class="topbar-mid" id="top-standings"></div>
+    <div class="topbar-right">
+      <div class="pill" id="pill-round">Round 1</div>
+      <div class="pill money" id="pill-money">$0M</div>
+      <button class="btn small" id="btn-endturn">End turn ▸</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="mapcol">
+      <div class="mapcard">
+        <div class="mapcard-head">
+          <div>
+            <div class="mapcard-kicker" id="map-kicker">projection</div>
+            <h3 id="map-title">Electoral map</h3>
+          </div>
+          <div class="mapmodes" id="map-modes"></div>
+        </div>
+        <div class="mapbox">
+          <svg id="usmap" viewBox="0 0 1060 612" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="tooltip" id="tip"></div>
+        </div>
+        <div class="evbar" id="evbar"></div>
+        <div class="maplegend" id="maplegend"></div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <nav class="tabs" id="side-tabs"></nav>
+      <div class="side-body" id="side-body"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= POLL ================= -->
+<section id="s-poll" class="screen">
+  <div class="doc">
+    <div class="kicker" id="poll-kicker">polling release</div>
+    <h2 id="poll-title">The state of the race</h2>
+    <div id="poll-body"></div>
+    <div class="setup-foot">
+      <button class="btn big" id="btn-poll-go">Next round ▸</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ELECTION NIGHT ================= -->
+<section id="s-night" class="screen full">
+  <header class="topbar night">
+    <div class="brand">ELECTION NIGHT</div>
+    <div class="topbar-mid" id="night-standings"></div>
+    <div class="topbar-right">
+      <div class="pill" id="night-clock">Polls closing</div>
+      <button class="btn small" id="btn-night-skip">Skip to the call</button>
+    </div>
+  </header>
+  <div class="stage">
+    <div class="mapcol">
+      <div class="mapcard">
+        <div class="mapcard-head">
+          <div><div class="mapcard-kicker">live results</div><h3 id="night-title">Returns</h3></div>
+        </div>
+        <div class="mapbox">
+          <svg id="nightmap" viewBox="0 0 1060 612" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="tooltip" id="ntip"></div>
+        </div>
+        <div class="evbar" id="night-evbar"></div>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="side-body" id="night-feed"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= FINAL ================= -->
+<section id="s-final" class="screen">
+  <div class="doc">
+    <div id="final-body"></div>
+    <div class="setup-foot">
+      <button class="btn big" id="btn-final-again">Run again</button>
+    </div>
+  </div>
+</section>
+
+<div id="modal-wrap" class="modal-wrap"><div class="modal" id="modal"></div></div>
+
+<script src="js/usmap.js"></script>
+<script src="js/data.js"></script>
+<script src="js/analyst.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
